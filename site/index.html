@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0f0f0f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="BPM Tap">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icons/icon-192.svg">
+  <link rel="stylesheet" href="/style.css">
+  <title>BPM Tap — FreeCuzFU</title>
+  <style>
+    #tap-area {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      gap: 0;
+    }
+
+    #tap-area::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at center, var(--accent) 0%, transparent 70%);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.05s ease-in;
+    }
+
+    #tap-area.pulse::after {
+      opacity: 0.12;
+      transition: none;
+    }
+
+    #bpm-number {
+      font-size: clamp(5rem, 30vw, 18rem);
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: -0.03em;
+      color: var(--text);
+      transition: color 0.1s ease, transform 0.05s ease;
+      will-change: transform;
+    }
+
+    #bpm-number.has-value {
+      color: var(--accent);
+    }
+
+    #tap-area.pulse #bpm-number {
+      transform: scale(1.03);
+    }
+
+    #bpm-label {
+      font-size: clamp(1rem, 4vw, 2.5rem);
+      font-weight: 600;
+      letter-spacing: 0.35em;
+      color: var(--muted);
+      margin-top: 0.2em;
+      text-transform: uppercase;
+    }
+
+    #bpm-number.has-value ~ #bpm-label {
+      color: rgba(255, 107, 53, 0.5);
+    }
+
+    #tempo-label {
+      font-size: clamp(0.65rem, 2vw, 0.9rem);
+      font-weight: 500;
+      letter-spacing: 0.35em;
+      color: rgba(255, 107, 53, 0.55);
+      text-transform: uppercase;
+      margin-top: 0.7em;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    #tempo-label.visible {
+      opacity: 1;
+    }
+
+    #tap-hint {
+      margin-top: clamp(2rem, 6vh, 4rem);
+      font-size: clamp(0.75rem, 2.5vw, 1.1rem);
+      font-weight: 500;
+      letter-spacing: 0.5em;
+      color: var(--muted);
+      text-transform: uppercase;
+      opacity: 1;
+      transition: opacity 0.3s ease;
+    }
+
+    #tap-hint.hidden {
+      opacity: 0;
+    }
+
+    #tap-dots {
+      position: fixed;
+      bottom: 5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 0.4rem;
+      pointer-events: none;
+    }
+
+    .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--muted);
+      transition: background 0.15s ease, transform 0.1s ease;
+    }
+
+    .dot.active {
+      background: var(--accent);
+      transform: scale(1.4);
+    }
+
+    #hd-btns {
+      position: fixed;
+      bottom: 8.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 0.5rem;
+      opacity: 0.3;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    #hd-btns.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .hd-btn {
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: rgba(255, 255, 255, 0.35);
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      padding: 0.45rem 1rem;
+      border-radius: 2rem;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s, background 0.2s;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+
+    .hd-btn:hover,
+    .hd-btn:active {
+      border-color: rgba(255, 107, 53, 0.5);
+      color: rgba(255, 107, 53, 0.85);
+    }
+
+    .hd-btn.active {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(255, 107, 53, 0.1);
+    }
+
+    #reset-btn {
+      position: fixed;
+      bottom: 1.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: rgba(255, 255, 255, 0.35);
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      padding: 0.5rem 1.2rem;
+      border-radius: 2rem;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s, background 0.2s;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+
+    #reset-btn:hover,
+    #reset-btn:active {
+      border-color: rgba(255, 255, 255, 0.4);
+      color: rgba(255, 255, 255, 0.7);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    #install-btn {
+      position: fixed;
+      top: 1.2rem;
+      right: 4rem;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: 0;
+      z-index: 10;
+      transition: color 0.2s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    #install-btn:hover {
+      color: var(--text);
+    }
+
+    #countdown-ring {
+      position: fixed;
+      top: 1.2rem;
+      right: 1.5rem;
+      width: 28px;
+      height: 28px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+    }
+
+    #countdown-ring.visible {
+      opacity: 0.5;
+    }
+
+    #countdown-ring circle {
+      fill: none;
+      stroke: var(--accent);
+      stroke-width: 2.5;
+      stroke-dasharray: 75.4;
+      stroke-dashoffset: 0;
+      stroke-linecap: round;
+      transform-origin: 14px 14px;
+      transform: rotate(-90deg);
+      transition: stroke-dashoffset linear;
+    }
+  </style>
+</head>
+<body>
+
+  <a href="https://freecuzfu.com" class="back-link">← FreeCuzFU</a>
+  <button id="install-btn" aria-label="Install app" hidden>↓ Install</button>
+
+  <div id="tap-area" role="button" aria-label="Tap to measure BPM" tabindex="0">
+    <div id="bpm-number">--</div>
+    <div id="bpm-label">BPM</div>
+    <div id="tempo-label"></div>
+    <div id="tap-hint">Tap anywhere</div>
+  </div>
+
+  <div id="tap-dots"></div>
+
+  <svg id="countdown-ring" viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="14" cy="14" r="11" id="ring-circle"/>
+  </svg>
+
+  <div id="hd-btns">
+    <button class="hd-btn" id="btn-half" aria-label="Half BPM">½</button>
+    <button class="hd-btn" id="btn-double" aria-label="Double BPM">×2</button>
+  </div>
+
+  <button id="reset-btn" aria-label="Reset">RESET</button>
+
+  <script src="/app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    }
+  </script>
+</body>
+</html>
